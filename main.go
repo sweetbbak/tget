@@ -36,6 +36,7 @@ func TruncateString(s string, length int) string {
 	for _, r := range s {
 		if l <= length {
 			sb.WriteRune(r)
+
 		} else {
 			break
 		}
@@ -82,14 +83,11 @@ func Download() error {
 	var t *torrent.Torrent
 	if strings.Contains(opts.Magnet, "magnet") {
 		t, err = client.AddMagnet(opts.Magnet)
-		if err != nil {
-			return err
-		}
 	} else {
 		t, err = client.AddTorrentFromFile(opts.Magnet)
-		if err != nil {
-			return err
-		}
+	}
+	if err != nil {
+		return err
 	}
 
 	success, _ := pterm.DefaultSpinner.Start("getting torrent info")
@@ -115,12 +113,12 @@ func Cleanup() error {
 	files := []string{".torrent.db", ".torrent.db-shm", ".torrent.db-wal", ".torrent.bolt.db"}
 	for _, f := range files {
 		fp := path.Join(opts.Output, f)
-		_, err := os.Stat(fp)
-		if err == nil {
-			err := os.Remove(fp)
-			if err != nil {
-				return fmt.Errorf("unable to remove torrent db: %v", err)
-			}
+		if _, err := os.Stat(fp); os.IsNotExist(err) {
+			continue
+		}
+		err := os.Remove(fp)
+		if err != nil {
+			return fmt.Errorf("unable to remove torrent db: %v", err)
 		}
 	}
 	return nil
