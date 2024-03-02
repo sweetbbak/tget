@@ -1,4 +1,4 @@
-{ lib, fetchFromGitHub, buildGoModule }:
+{ lib, fetchFromGitHub, buildGoModule, upx }:
 
 buildGoModule rec {
     pname = "tget";
@@ -7,9 +7,8 @@ buildGoModule rec {
     src = fetchFromGitHub {
       owner = "sweetbbak";
       repo = "tget";
-      rev = "48ed9a95fc68c9455f6f063dec387b1f2bfa441f";
+      rev = "959e5f4c89156b789e35a92438735004716d12a9";
       hash = "sha256-3pf5woxqUf7RfX32P21UwOBpsW1i6nkYdD6We0YjdFQ=";
-      # hash = "sha256-2Z5agQtF6p21rnAcjsRr+3QOJ0QGveKVH8e9LHpm3ZE=";
     };
 
     # vendorHash = lib.fakeHash;
@@ -17,6 +16,7 @@ buildGoModule rec {
 
     CGO_ENABLED = 0;
     ldflags = [ "-s" "-w" ];
+    # buildInputs = [ "upx" ];
 
     tags = [ "torrent" "bittorrent" "anime" ];
     proxyVendor = true;
@@ -27,6 +27,7 @@ buildGoModule rec {
     '';
 
     installPhase = ''
+        ${upx}/bin/upx -9 tget
         mkdir -p $out/bin
         mv tget $out/bin
     '';

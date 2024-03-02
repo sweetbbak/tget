@@ -36,6 +36,9 @@ func TruncateString(s string, length int) string {
 	for _, r := range s {
 		if l <= length {
 			sb.WriteRune(r)
+
+		} else {
+			break
 		}
 		l++
 	}
@@ -53,7 +56,7 @@ func Header() {
 }
 
 func Progress(t *torrent.Torrent) {
-	title := TruncateString(t.Name(), 55)
+	title := TruncateString(t.Name(), 100)
 	fmt.Println(title)
 
 	p, _ := pterm.DefaultProgressbar.WithTotal(100).Start()
@@ -107,7 +110,7 @@ func Download() error {
 }
 
 func Cleanup() error {
-	files := []string{".torrent.db", ".torrent.db-shm", ".torrent.db-wal"}
+	files := []string{".torrent.db", ".torrent.db-shm", ".torrent.db-wal", ".torrent.bolt.db"}
 	for _, f := range files {
 		fp := path.Join(opts.Output, f)
 		if _, err := os.Stat(fp); os.IsNotExist(err) {
