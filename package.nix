@@ -7,12 +7,13 @@ buildGoModule rec {
     src = fetchFromGitHub {
       owner = "sweetbbak";
       repo = "tget";
-      # rev = "9dc67d420208bb5f9debd260170d54035242c7ab";
+      rev = "48ed9a95fc68c9455f6f063dec387b1f2bfa441f";
+      hash = "sha256-3pf5woxqUf7RfX32P21UwOBpsW1i6nkYdD6We0YjdFQ=";
       # hash = "sha256-2Z5agQtF6p21rnAcjsRr+3QOJ0QGveKVH8e9LHpm3ZE=";
     };
 
-    vendorHash = lib.fakeHash;
-    # vendorHash = "sha256-alC4/2wTbjJYWGzTDTgQweOicN3xSqfnncok/j16+0E=";
+    # vendorHash = lib.fakeHash;
+    vendorHash = "sha256-74++inwJPbpjPrK5Xn66t+s50wbA2H1RgCxrS7DVJiA=";
 
     CGO_ENABLED = 0;
     ldflags = [ "-s" "-w" ];
@@ -23,12 +24,11 @@ buildGoModule rec {
     buildPhase = ''
         go mod vendor
         go build
-        upx -9 tget
     '';
 
     installPhase = ''
         mkdir -p $out/bin
-        mv toru $out/bin
+        mv tget $out/bin
     '';
 
     meta = with lib; {
@@ -36,6 +36,6 @@ buildGoModule rec {
         description = "wget but for torrents";
         license = licenses.mit;
         maintainers = with maintainers; [ sweetbbak ];
-        mainProgram = "toru";
+        mainProgram = "tget";
     };
 }
