@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
 	"time"
@@ -54,7 +55,7 @@ func Header() {
 }
 
 func Progress(t *torrent.Torrent) {
-	title := TruncateString(t.Name(), 33)
+	title := TruncateString(t.Name(), 55)
 	fmt.Println(title)
 
 	p, _ := pterm.DefaultProgressbar.WithTotal(100).Start()
@@ -136,6 +137,21 @@ func init() {
 	}
 }
 
+func HandleExit() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		fmt.Println()
+		fmt.Printf("\n\n\n%s\n", "Are you sure you want to exit? press [ctrl+c]")
+		<-c
+		fmt.Printf("\n\n\n")
+		pterm.Info.Println("Exiting...")
+		Cleanup()
+		os.Exit(0)
+	}()
+}
+
 func main() {
 	args, err := flags.Parse(&opts)
 	if flags.WroteHelp(err) {
@@ -156,6 +172,8 @@ func main() {
 	if opts.Magnet == "" && len(args) > 0 {
 		opts.Magnet = args[0]
 	}
+
+	HandleExit()
 
 	if err := Download(); err != nil {
 		log.Fatal(err)
