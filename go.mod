@@ -4,7 +4,6 @@ go 1.21.7
 
 require (
 	github.com/anacrolix/torrent v1.55.0
-	github.com/dustin/go-humanize v1.0.0
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/pterm/pterm v0.12.79
 )
@@ -38,6 +37,7 @@ require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/go-llsqlite/adapter v0.0.0-20230927005056-7f5ce7f0c916 // indirect
 	github.com/go-llsqlite/crawshaw v0.4.0 // indirect
