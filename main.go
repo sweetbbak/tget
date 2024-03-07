@@ -18,7 +18,7 @@ import (
 
 var opts struct {
 	Magnet      string `short:"t" long:"torrent" description:"path to torrent or magnet link"`
-	Output      string `short:"o" long:"output" description:"path to output torrent"`
+	Output      string `short:"o" long:"output" description:"path to a directory to output the torrent"`
 	DisableIPV6 bool   `short:"4" long:"ipv4" description:"dont use ipv6"`
 	Quiet       bool   `short:"q" long:"quiet" description:"dont output text or progress bar"`
 	NoCleanup   bool   `short:"n" long:"no-cleanup" description:"dont delete torrent database files on exit"`
@@ -70,10 +70,21 @@ func Progress(t *torrent.Torrent) {
 	}
 }
 
+func CreateOutput(dir string) {
+	_, err := os.Stat(opts.Output)
+	if err == nil {
+		return
+	} else {
+		os.MkdirAll(opts.Output, 0o755)
+	}
+}
+
 func Download() error {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DisableIPv6 = opts.DisableIPV6
 	cfg.DefaultStorage = storage.NewFile(opts.Output)
+
+	CreateOutput(opts.Output)
 
 	client, err := torrent.NewClient(cfg)
 	if err != nil {
