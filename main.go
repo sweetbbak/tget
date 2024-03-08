@@ -82,9 +82,8 @@ func CreateOutput(dir string) {
 func Download() error {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DisableIPv6 = opts.DisableIPV6
-	cfg.DefaultStorage = storage.NewFile(opts.Output)
-
 	CreateOutput(opts.Output)
+	cfg.DefaultStorage = storage.NewFile(opts.Output)
 
 	client, err := torrent.NewClient(cfg)
 	if err != nil {
@@ -94,16 +93,31 @@ func Download() error {
 	var t *torrent.Torrent
 	if strings.Contains(opts.Magnet, "magnet") {
 		t, err = client.AddMagnet(opts.Magnet)
+		if err != nil {
+			return err
+		}
+	} else if strings.Contains(opts.Magnet, "http") {
+		success, _ := pterm.DefaultSpinner.Start("Downloading torrent from remote...")
+		path, err := fileFromURL(opts.Magnet)
+		if err != nil {
+			success.Fail("Unable to download remote torrent")
+			return fmt.Errorf("tget: unable to download torrent from URL [%s]: %v", opts.Magnet, err)
+		}
+		success.Success("Downloaded torrent file")
+		t, err = client.AddTorrentFromFile(path)
+		if err != nil {
+			return err
+		}
 	} else {
 		t, err = client.AddTorrentFromFile(opts.Magnet)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
-	success, _ := pterm.DefaultSpinner.Start("getting torrent info")
+	success, _ := pterm.DefaultSpinner.Start("Getting torrent info...")
 	<-t.GotInfo()
-	success.Success("Success!")
+	success.Success("Got torrent info!")
 
 	if !opts.Quiet {
 		go func() {
