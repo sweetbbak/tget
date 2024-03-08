@@ -22,6 +22,7 @@ var opts struct {
 	Magnet      string `short:"t" long:"torrent" description:"path to torrent or magnet link"`
 	Output      string `short:"o" long:"output" description:"path to a directory to output the torrent"`
 	Proxy       string `short:"p" long:"proxy" description:"proxy URL to use"`
+	Blocklist   string `short:"b" long:"blocklist" description:"path or URL pointing to a plain-text IP blocklist"`
 	DisableIPV6 bool   `short:"4" long:"ipv4" description:"dont use ipv6"`
 	Quiet       bool   `short:"q" long:"quiet" description:"dont output text or progress bar"`
 	NoCleanup   bool   `short:"n" long:"no-cleanup" description:"dont delete torrent database files on exit"`
@@ -85,15 +86,24 @@ func CreateOutput(dir string) {
 func Download() error {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DisableIPv6 = opts.DisableIPV6
+
 	CreateOutput(opts.Output)
 	cfg.DefaultStorage = storage.NewFile(opts.Output)
+
+	if opts.Blocklist != "" {
+		f, err := openBlocklist(opts.Blocklist)
+		if err != nil {
+			return err
+		}
+		ipb, err := parseBlocklist(f)
+		cfg.IPBlocklist = ipb
+	}
 
 	if opts.Proxy != "" {
 		u, err := url.Parse(opts.Proxy)
 		if err != nil {
 			return err
 		}
-
 		cfg.HTTPProxy = http.ProxyURL(u)
 	}
 
