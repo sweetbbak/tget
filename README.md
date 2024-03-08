@@ -75,7 +75,9 @@ download a torrent from a magnet:
 
 ```sh
 tget --torrent "magnet:..."
-# or
+tget --torrent "/path/to/file.torrent"
+tget --torrent "https://example.tld/files/file.torrent"
+# or you can non-explicitly supply the same arguments without a flag if you wish
 tget "magnet:..."
 ```
 
@@ -85,6 +87,21 @@ Use IPv4 (instead of IPv6) and specify an output directory:
 tget --ipv4 --output=/path/to/output --torrent "magnet:..."
 
 ```
+
+Use a Proxy and an IP Blocklist:
+
+```sh
+tget                       \
+  --ipv4                   \
+  --output=/path/to/output \
+  --proxy=123.123.123.1    \
+  --blocklist https://myblocklist/ip-blocklist.txt \
+  --torrent "magnet:..."
+```
+
+You can supply a blocklist from a remote URL or locally on the filesystem.
+Currently, this only supports non-compressed and non-packed blocklists but that will
+come in the future.
 
 ## Support
 
