@@ -25,6 +25,7 @@ var opts struct {
 	Blocklist   string `short:"b" long:"blocklist" description:"path or URL pointing to a plain-text IP blocklist"`
 	DisableIPV6 bool   `short:"4" long:"ipv4" description:"dont use ipv6"`
 	Quiet       bool   `short:"q" long:"quiet" description:"dont output text or progress bar"`
+	Info        bool   `short:"i" long:"info" description:"display torrent info and exit"`
 	NoCleanup   bool   `short:"n" long:"no-cleanup" description:"dont delete torrent database files on exit"`
 }
 
@@ -112,34 +113,10 @@ func Download() error {
 		return err
 	}
 
-	var t *torrent.Torrent
-	if strings.Contains(opts.Magnet, "magnet") {
-		t, err = client.AddMagnet(opts.Magnet)
-		if err != nil {
-			return err
-		}
-	} else if strings.Contains(opts.Magnet, "http") {
-		success, _ := pterm.DefaultSpinner.Start("Downloading torrent from remote...")
-		path, err := fileFromURL(opts.Magnet)
-		if err != nil {
-			success.Fail("Unable to download remote torrent")
-			return fmt.Errorf("tget: unable to download torrent from URL [%s]: %v", opts.Magnet, err)
-		}
-		success.Success("Downloaded torrent file")
-		t, err = client.AddTorrentFromFile(path)
-		if err != nil {
-			return err
-		}
-	} else {
-		t, err = client.AddTorrentFromFile(opts.Magnet)
-		if err != nil {
-			return err
-		}
+	t, err := AddTorrent(client, opts.Magnet)
+	if err != nil {
+		return err
 	}
-
-	success, _ := pterm.DefaultSpinner.Start("Getting torrent info...")
-	<-t.GotInfo()
-	success.Success("Got torrent info!")
 
 	if !opts.Quiet {
 		go func() {
@@ -154,6 +131,39 @@ func Download() error {
 	} else {
 		return fmt.Errorf("Unable to completely download torrent: %s", t.Name())
 	}
+}
+
+func AddTorrent(client *torrent.Client, tor string) (*torrent.Torrent, error) {
+	var t *torrent.Torrent
+	var err error
+	if strings.Contains(tor, "magnet") {
+		t, err = client.AddMagnet(tor)
+		if err != nil {
+			return nil, err
+		}
+	} else if strings.Contains(tor, "http") {
+		success, _ := pterm.DefaultSpinner.Start("Downloading torrent from remote...")
+		path, err := fileFromURL(tor)
+		if err != nil {
+			success.Fail("Unable to download remote torrent")
+			return nil, fmt.Errorf("tget: unable to download torrent from URL [%s]: %v", opts.Magnet, err)
+		}
+		success.Success("Downloaded torrent file")
+		t, err = client.AddTorrentFromFile(path)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		t, err = client.AddTorrentFromFile(tor)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	success, _ := pterm.DefaultSpinner.Start("Getting torrent info...")
+	<-t.GotInfo()
+	success.Success("Got torrent info!")
+	return t, nil
 }
 
 func Cleanup() error {
@@ -206,10 +216,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if !opts.Quiet {
-		Header()
-	}
-
 	if opts.Magnet == "" && len(args) < 1 {
 		log.Fatal("tget: must provide torrent file")
 	}
@@ -218,7 +224,18 @@ func main() {
 		opts.Magnet = args[0]
 	}
 
+	if opts.Info {
+		if err := Info(opts.Magnet); err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
+	}
+
 	HandleExit()
+
+	if !opts.Quiet {
+		Header()
+	}
 
 	if err := Download(); err != nil {
 		log.Fatal(err)
