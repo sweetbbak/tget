@@ -11,8 +11,9 @@ buildGoModule rec {
   src = fetchFromGitHub {
     owner = "sweetbbak";
     repo = "tget";
-    rev = "3643ce8f52696e4e476d7a22e59b962b90fed963";
-    hash = "sha256-UvtAEAQkpCaKtty+URw+feNeE+F49BWMD/rphHSqoi8=";
+    rev = "9605e994b4926a8cd001e5b78c91fe7871552e5f";
+    # hash = lib.fakeHash;
+    hash = "sha256-gI3I/Jt8E2URvGyoo23HyWhg/qbnLvF8OsmJyeyA2xE=";
   };
 
   # vendorHash = lib.fakeHash;
