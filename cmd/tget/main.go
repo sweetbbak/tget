@@ -13,9 +13,15 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
+	"github.com/carlmjohnson/versioninfo"
 	"github.com/jessevdk/go-flags"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
+)
+
+const (
+	Version = "v0.1"
+	Rev     = ""
 )
 
 var opts struct {
@@ -26,6 +32,7 @@ var opts struct {
 	DisableIPV6 bool   `short:"4" long:"ipv4" description:"dont use ipv6"`
 	Quiet       bool   `short:"q" long:"quiet" description:"dont output text or progress bar"`
 	Info        bool   `short:"i" long:"info" description:"display torrent info and exit"`
+	Version     bool   `short:"V" long:"version" description:"display the version and exit"`
 	NoCleanup   bool   `short:"n" long:"no-cleanup" description:"dont delete torrent database files on exit"`
 }
 
@@ -207,6 +214,11 @@ func HandleExit() {
 	}()
 }
 
+func showVersion() {
+	fmt.Printf("%s (%s)\n", Version, versioninfo.Revision)
+	os.Exit(0)
+}
+
 func main() {
 	args, err := flags.Parse(&opts)
 	if flags.WroteHelp(err) {
@@ -214,6 +226,10 @@ func main() {
 	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if opts.Version {
+		showVersion()
 	}
 
 	if opts.Magnet == "" && len(args) < 1 {

@@ -4,6 +4,7 @@ go 1.21.7
 
 require (
 	github.com/anacrolix/torrent v1.55.0
+	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/pterm/pterm v0.12.79
 )
