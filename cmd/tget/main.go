@@ -21,7 +21,6 @@ import (
 
 const (
 	Version = "v0.1"
-	Rev     = ""
 )
 
 var opts struct {
@@ -215,7 +214,7 @@ func HandleExit() {
 }
 
 func showVersion() {
-	fmt.Printf("%s (%s)\n", Version, versioninfo.Revision)
+	fmt.Printf("tget %s (%s)\n", Version, versioninfo.Revision)
 	os.Exit(0)
 }
 
