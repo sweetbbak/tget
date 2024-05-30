@@ -9,14 +9,11 @@ import (
 	"os/signal"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/storage"
 	"github.com/carlmjohnson/versioninfo"
 	"github.com/jessevdk/go-flags"
 	"github.com/pterm/pterm"
-	"github.com/pterm/pterm/putils"
 )
 
 const (
@@ -25,82 +22,76 @@ const (
 
 var opts struct {
 	Magnet      string `short:"t" long:"torrent" description:"path to torrent or magnet link"`
+	FileIndex   string `short:"f" long:"files" description:"select files to download by index ex: (0,2,3-5)"`
+	Info        bool   `short:"i" long:"info" description:"display torrent info and exit"`
+	FileInfo    bool   `short:"F" long:"list-files" description:"list files and their index of a given torrent"`
 	Output      string `short:"o" long:"output" description:"path to a directory to output the torrent"`
 	Proxy       string `short:"p" long:"proxy" description:"proxy URL to use"`
 	Blocklist   string `short:"b" long:"blocklist" description:"path or URL pointing to a plain-text IP blocklist"`
 	DisableIPV6 bool   `short:"4" long:"ipv4" description:"dont use ipv6"`
 	Quiet       bool   `short:"q" long:"quiet" description:"dont output text or progress bar"`
-	Info        bool   `short:"i" long:"info" description:"display torrent info and exit"`
 	Version     bool   `short:"V" long:"version" description:"display the version and exit"`
 	NoCleanup   bool   `short:"n" long:"no-cleanup" description:"dont delete torrent database files on exit"`
 }
 
-func TruncateString(s string, length int) string {
-	var l int
-	var sb strings.Builder
-
-	// early return if string is shorter then requested length
-	if length >= len(s) {
-		return s
+func Download(client *torrent.Client, tor string) error {
+	t, err := AddTorrent(client, tor)
+	if err != nil {
+		return err
 	}
 
-	for _, r := range s {
-		if l <= length {
-			sb.WriteRune(r)
-
-		} else {
-			break
+	if opts.FileIndex != "" {
+		idxs, err := ParseIndices(opts.FileIndex)
+		if err != nil {
+			return err
 		}
-		l++
-	}
-	return sb.String()
-}
 
-func Header() {
-	// Initialize a big text display with the letters "P" and "Term"
-	// "P" is displayed in cyan and "Term" is displayed in light magenta
-	pterm.DefaultBigText.WithLetters(
-		// putils.LettersFromStringWithStyle("T", pterm.FgCyan.ToStyle()),
-		putils.LettersFromStringWithRGB("T", pterm.NewRGB(61, 238, 253)),
-		putils.LettersFromStringWithRGB("get", pterm.NewRGB(249, 46, 254))).
-		Render() // Render the big text to the terminal
-}
-
-func Progress(t *torrent.Torrent) {
-	title := TruncateString(t.Name(), 100)
-	fmt.Printf("name [%s]...", title)
-
-	p, _ := pterm.DefaultProgressbar.WithTotal(100).Start()
-
-	for !t.Complete.Bool() {
-		pc := float64(t.BytesCompleted()) / float64(t.Length()) * 100
-		numpeers := len(t.PeerConns())
-		p.Increment().Current = int(pc)
-		p.UpdateTitle(fmt.Sprintf("peers [%v]", numpeers))
-		time.Sleep(time.Millisecond * 50)
-	}
-}
-
-func CreateOutput(dir string) {
-	_, err := os.Stat(opts.Output)
-	if err == nil {
-		return
+		if err := SelectFileByIndex(t, client, idxs); err != nil {
+			return err
+		}
 	} else {
-		os.MkdirAll(opts.Output, 0o755)
+		t.DownloadAll()
+		if !opts.Quiet {
+			go func() {
+				Progress(t)
+			}()
+		}
+	}
+
+	if t.Complete.Bool() {
+		t.VerifyData()
+	}
+
+	if client.WaitAll() {
+		pterm.Success.Printf("Downloaded: %s\n", t.Name())
+		// client.WriteStatus(os.Stdout)
+		SeedProgress(t)
+		return nil
+	} else {
+		return fmt.Errorf("Unable to completely download torrent: %s", t.Name())
 	}
 }
 
-func Download() error {
+func ConfigClient() (*torrent.Client, error) {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DisableIPv6 = opts.DisableIPV6
 
 	CreateOutput(opts.Output)
-	cfg.DefaultStorage = storage.NewFile(opts.Output)
+	tmpdir := os.TempDir()
+	// cfg.DefaultStorage = storage.NewFile(opts.Output)
+
+	// set default output directory
+	stor, err := getMetadataDir(tmpdir, opts.Output)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.DefaultStorage = stor
 
 	if opts.Blocklist != "" {
 		f, err := openBlocklist(opts.Blocklist)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		ipb, err := parseBlocklist(f)
 		cfg.IPBlocklist = ipb
@@ -109,34 +100,17 @@ func Download() error {
 	if opts.Proxy != "" {
 		u, err := url.Parse(opts.Proxy)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		cfg.HTTPProxy = http.ProxyURL(u)
 	}
 
 	client, err := torrent.NewClient(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	t, err := AddTorrent(client, opts.Magnet)
-	if err != nil {
-		return err
-	}
-
-	if !opts.Quiet {
-		go func() {
-			Progress(t)
-		}()
-	}
-
-	t.DownloadAll()
-	if client.WaitAll() {
-		pterm.Success.Printf("Downloaded: %s\n", t.Name())
-		return nil
-	} else {
-		return fmt.Errorf("Unable to completely download torrent: %s", t.Name())
-	}
+	return client, nil
 }
 
 func AddTorrent(client *torrent.Client, tor string) (*torrent.Torrent, error) {
@@ -208,7 +182,7 @@ func HandleExit() {
 		<-c
 		fmt.Printf("\n\n\n")
 		pterm.Info.Println("Exiting...")
-		Cleanup()
+		// Cleanup()
 		os.Exit(0)
 	}()
 }
@@ -239,8 +213,20 @@ func main() {
 		opts.Magnet = args[0]
 	}
 
+	client, err := ConfigClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if opts.FileInfo {
+		if err := Info(opts.Magnet, client); err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
+	}
+
 	if opts.Info {
-		if err := Info(opts.Magnet); err != nil {
+		if err := Info(opts.Magnet, client); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
@@ -252,13 +238,7 @@ func main() {
 		Header()
 	}
 
-	if err := Download(); err != nil {
+	if err := Download(client, opts.Magnet); err != nil {
 		log.Fatal(err)
-	}
-
-	if !opts.NoCleanup {
-		if err := Cleanup(); err != nil {
-			log.Fatal(err)
-		}
 	}
 }

@@ -19,23 +19,46 @@ func prettyByteSize(b int) string {
 	return fmt.Sprintf("%.1fYiB", bf)
 }
 
-func Info(tor string) error {
-	cfg := torrent.NewDefaultClientConfig()
-	client, err := torrent.NewClient(cfg)
+func FileInfo(tor string, client *torrent.Client) error {
+	t, err := AddTorrent(client, tor)
 	if err != nil {
 		return err
 	}
 
+	printFileInfo(t)
+	t.Drop()
+	client.Close()
+	return nil
+}
+
+func Info(tor string, client *torrent.Client) error {
 	t, err := AddTorrent(client, tor)
 	if err != nil {
 		return err
 	}
 
 	printInfo(t)
+
+	t.Drop()
+	client.Close()
 	return nil
 }
 
+// print torrent information and files + their index
 func printInfo(t *torrent.Torrent) {
+	info := t.Info()
+	files := t.Files()
+	sz := info.TotalLength()
+	psz := prettyByteSize(int(sz))
+	fmt.Printf("[%s] %s\n", psz, info.Name)
+
+	fmt.Printf("Files:\n")
+	for i, f := range files {
+		fmt.Printf("%03d | %s\n", i, f.DisplayPath())
+	}
+}
+
+func printFileInfo(t *torrent.Torrent) {
 	info := t.Info()
 	files := t.Files()
 	sz := info.TotalLength()
