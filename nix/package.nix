@@ -2,22 +2,23 @@
   lib,
   fetchFromGitHub,
   buildGoModule,
+  just,
   upx,
 }:
-buildGoModule rec {
+buildGoModule {
   pname = "tget";
-  version = "0.1";
+  version = "0.1.1";
 
   src = fetchFromGitHub {
     owner = "sweetbbak";
     repo = "tget";
-    rev = "9605e994b4926a8cd001e5b78c91fe7871552e5f";
+    rev = "0a7cc2fd9eeb6ffc90f0687f580b786e76a7a90d";
     # hash = lib.fakeHash;
-    hash = "sha256-gI3I/Jt8E2URvGyoo23HyWhg/qbnLvF8OsmJyeyA2xE=";
+    hash = "sha256-9opGtMlQt3qeW/D/mVrbnBFBsGeNGk8F0YexVlLs0wE=";
   };
 
   # vendorHash = lib.fakeHash;
-  vendorHash = "sha256-74++inwJPbpjPrK5Xn66t+s50wbA2H1RgCxrS7DVJiA=";
+  vendorHash = "sha256-2lzMwp0XN7pC5s2PYqyN+BUeCqDsFu/sMmcUorr71BY=";
 
   CGO_ENABLED = 0;
   ldflags = ["-s" "-w"];
@@ -27,7 +28,7 @@ buildGoModule rec {
 
   buildPhase = ''
     go mod vendor
-    go build
+    ${just}/bin/just
   '';
 
   installPhase = ''
