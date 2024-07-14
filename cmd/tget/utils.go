@@ -126,7 +126,7 @@ func SeedProgress(t *torrent.Torrent) {
 
 		fmt.Printf("upload [%d] [%s|%3.1f]\n", upload, Upload(t), pc)
 
-		time.Sleep(time.Millisecond * 1000)
+		time.Sleep(time.Millisecond * 800)
 		if pc >= 100.00 {
 			break
 		}
@@ -154,10 +154,8 @@ func Header() {
 	// Initialize a big text display with the letters "P" and "Term"
 	// "P" is displayed in cyan and "Term" is displayed in light magenta
 	pterm.DefaultBigText.WithLetters(
-		// putils.LettersFromStringWithStyle("T", pterm.FgCyan.ToStyle()),
 		putils.LettersFromStringWithRGB("T", pterm.NewRGB(61, 238, 253)),
-		putils.LettersFromStringWithRGB("get", pterm.NewRGB(249, 46, 254))).
-		Render() // Render the big text to the terminal
+		putils.LettersFromStringWithRGB("get", pterm.NewRGB(249, 46, 254))).WithWriter(os.Stderr).Render()
 }
 
 func CreateOutput(dir string) {

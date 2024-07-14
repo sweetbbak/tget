@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
-	"net/url"
+	// "net/http"
 	"os"
 	"os/signal"
 	"path"
@@ -14,24 +13,29 @@ import (
 	"github.com/carlmjohnson/versioninfo"
 	"github.com/jessevdk/go-flags"
 	"github.com/pterm/pterm"
+	// "golang.org/x/net/proxy"
 )
 
 const (
-	Version = "v0.1"
+	Version = "v0.1.1"
 )
 
 var opts struct {
-	Magnet      string `short:"t" long:"torrent" description:"path to torrent or magnet link"`
-	FileIndex   string `short:"f" long:"files" description:"select files to download by index ex: (0,2,3-5)"`
-	Info        bool   `short:"i" long:"info" description:"display torrent info and exit"`
-	FileInfo    bool   `short:"F" long:"list-files" description:"list files and their index of a given torrent"`
-	Output      string `short:"o" long:"output" description:"path to a directory to output the torrent"`
-	Proxy       string `short:"p" long:"proxy" description:"proxy URL to use"`
-	Blocklist   string `short:"b" long:"blocklist" description:"path or URL pointing to a plain-text IP blocklist"`
-	DisableIPV6 bool   `short:"4" long:"ipv4" description:"dont use ipv6"`
-	Quiet       bool   `short:"q" long:"quiet" description:"dont output text or progress bar"`
-	Version     bool   `short:"V" long:"version" description:"display the version and exit"`
-	NoCleanup   bool   `short:"n" long:"no-cleanup" description:"dont delete torrent database files on exit"`
+	Magnet            string `short:"t" long:"torrent" description:"path to torrent or magnet link"`
+	FileIndex         string `short:"f" long:"files" description:"select files to download by index ex: (0,2,3-5)"`
+	Info              bool   `short:"i" long:"info" description:"display torrent info and exit"`
+	FileInfo          bool   `short:"F" long:"list-files" description:"list files and their index of a given torrent"`
+	Output            string `short:"o" long:"output" description:"path to a directory to output the torrent"`
+	Proxy             string `short:"p" long:"proxy" description:"set the URL and PORT to listen on. Overrides torrent-port"`
+	Blocklist         string `short:"b" long:"blocklist" description:"path or URL pointing to a plain-text IP blocklist"`
+	DisableIPV6       bool   `short:"4" long:"ipv4" description:"dont use ipv6"`
+	Quiet             bool   `short:"q" long:"quiet" description:"dont output text or progress bar"`
+	Version           bool   `short:"V" long:"version" description:"display the version and exit"`
+	LimitRate         int    `short:"L" long:"limit" description:"limit torrent download by N Kbps"`
+	DisableWebtorrent bool   `          long:"disable-webtorrent" description:"disable webtorrent features"`
+	NoCleanup         bool   `short:"n" long:"no-cleanup" description:"dont delete torrent database files on exit"`
+	TorrentPort       int    `short:"T" long:"torrent-port" description:"set the port that the torrent client will use to talk to peers internally"`
+	// SocksProxy        string `short:"X" long:"socks-proxy" description:"experimental"`
 }
 
 func Download(client *torrent.Client, tor string) error {
@@ -64,7 +68,6 @@ func Download(client *torrent.Client, tor string) error {
 
 	if client.WaitAll() {
 		pterm.Success.Printf("Downloaded: %s\n", t.Name())
-		// client.WriteStatus(os.Stdout)
 		SeedProgress(t)
 		return nil
 	} else {
@@ -88,6 +91,10 @@ func ConfigClient() (*torrent.Client, error) {
 
 	cfg.DefaultStorage = stor
 
+	if opts.TorrentPort > 1 {
+		cfg.ListenPort = opts.TorrentPort
+	}
+
 	if opts.Blocklist != "" {
 		f, err := openBlocklist(opts.Blocklist)
 		if err != nil {
@@ -98,12 +105,37 @@ func ConfigClient() (*torrent.Client, error) {
 	}
 
 	if opts.Proxy != "" {
-		u, err := url.Parse(opts.Proxy)
-		if err != nil {
-			return nil, err
-		}
-		cfg.HTTPProxy = http.ProxyURL(u)
+		// u, err := url.Parse(opts.Proxy)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// cfg.HTTPProxy = http.ProxyURL(u)
+		// test this out for sox proxy - overwrites opts.TorrentPort
+		cfg = cfg.SetListenAddr(opts.Proxy)
 	}
+
+	if opts.LimitRate > 1 {
+		rl := limit(opts.LimitRate)
+		// cfg.DialRateLimiter = rl
+		cfg.UploadRateLimiter = rl
+		cfg.DownloadRateLimiter = rl
+	}
+
+	// if opts.SocksProxy != "" {
+	// 	dialer, err := proxy.SOCKS5("tcp", opts.SocksProxy, nil, proxy.Direct)
+	// 	if err != nil {
+	// 		fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
+	// 	}
+	//
+	// 	tr := &http.Transport{Dial: dialer.Dial}
+	// 	// myClient := &http.Client{
+	// 	// 	Transport: tr,
+	// 	// }
+	//
+	// 	cfg.WebTransport = tr
+	// }
+
+	cfg.DisableWebtorrent = opts.DisableWebtorrent
 
 	client, err := torrent.NewClient(cfg)
 	if err != nil {
@@ -234,9 +266,9 @@ func main() {
 
 	HandleExit()
 
-	if !opts.Quiet {
-		Header()
-	}
+	// if !opts.Quiet {
+	// 	Header()
+	// }
 
 	if err := Download(client, opts.Magnet); err != nil {
 		log.Fatal(err)
