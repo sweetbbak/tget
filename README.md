@@ -103,6 +103,11 @@ You can supply a blocklist from a remote URL or locally on the filesystem.
 Currently, this only supports non-compressed and non-packed blocklists but that will
 come in the future.
 
+## Changelog
+
+07/14/2024 - added support for setting internal host and port or port through `--proxy` and `--torrent-port` respectively
+and added support for setting a upload/download rate limit in Kilobytes per second through `--limit`
+
 ## Support
 
 <p align="center">
