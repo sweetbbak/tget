@@ -158,11 +158,11 @@ func Header() {
 		putils.LettersFromStringWithRGB("get", pterm.NewRGB(249, 46, 254))).WithWriter(os.Stderr).Render()
 }
 
-func CreateOutput(dir string) {
-	_, err := os.Stat(opts.Output)
+func CreateOutput(dir string) error {
+	_, err := os.Stat(dir)
 	if err == nil {
-		return
+		return err
 	} else {
-		os.MkdirAll(opts.Output, 0o755)
+		return os.MkdirAll(dir, 0o755)
 	}
 }

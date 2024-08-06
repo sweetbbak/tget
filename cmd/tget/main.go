@@ -79,7 +79,11 @@ func ConfigClient() (*torrent.Client, error) {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DisableIPv6 = opts.DisableIPV6
 
-	CreateOutput(opts.Output)
+	err := CreateOutput(opts.Output)
+	if err != nil {
+		return nil, err
+	}
+
 	tmpdir := os.TempDir()
 	// cfg.DefaultStorage = storage.NewFile(opts.Output)
 
