@@ -26,7 +26,7 @@ Introducing tget, a user-friendly command-line tool for effortless torrent downl
 </details>
 
 ```sh
-go install github.com/sweetbbak/tget@latest
+go install github.com/sweetbbak/cmd/tget@latest
 ```
 
 With Nix (warning, these are my first ever flakes.)
