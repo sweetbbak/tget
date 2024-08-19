@@ -12,9 +12,9 @@ buildGoModule {
   src = fetchFromGitHub {
     owner = "sweetbbak";
     repo = "tget";
-    rev = "0a7cc2fd9eeb6ffc90f0687f580b786e76a7a90d";
+    rev = "135167df0afd3fc5df92e44b94401c223d7ee0ac";
     # hash = lib.fakeHash;
-    hash = "sha256-9opGtMlQt3qeW/D/mVrbnBFBsGeNGk8F0YexVlLs0wE=";
+    hash = "sha256-XbIw1wLJ3PdhkOQca8UzZ1livauTdTdZbTWXrA2Nrfk=";
   };
 
   # vendorHash = lib.fakeHash;

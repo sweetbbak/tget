@@ -6,5 +6,5 @@ Comment=Download and seed files with BitTorrent from your terminal
 Categories=Network;FileTransfer;P2P;ConsoleOnly;
 Keywords=torrents;downloading;uploading;share;sharing;
 Terminal=true
-Exec=tget %U
+Exec=tget --torrent %U
 MimeType=application/x-bittorrent;x-scheme-handler/magnet;
