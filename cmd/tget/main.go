@@ -97,6 +97,13 @@ func ConfigClient() (*torrent.Client, error) {
 
 	if opts.TorrentPort > 1 {
 		cfg.ListenPort = opts.TorrentPort
+	} else {
+		p, err := GetFreePort()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get an open port: %w", err)
+		}
+
+		cfg.ListenPort = p
 	}
 
 	if opts.Blocklist != "" {
