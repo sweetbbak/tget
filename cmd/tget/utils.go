@@ -133,16 +133,16 @@ func SeedProgress(t *torrent.Torrent) {
 
 	for {
 		fmt.Print("\x1b7")       // save the cursor position
-		fmt.Print("\x1b[2k")     // erase the current line
+		fmt.Print("\x1b[2K")     // erase the current line
 		defer fmt.Print("\x1b8") // restore the cursor position
 
 		stats := t.Stats()
 		upload := stats.ConnStats.BytesWritten.Int64()
 		pc := float64(float64(upload)/tlen) * 100
 
-		fmt.Printf("upload [%d] [%s|%3.1f]\n", upload, Upload(t), pc)
+		fmt.Printf("upload [%d] [%s|%3.1f%]\n", upload, Upload(t), pc)
 
-		time.Sleep(time.Millisecond * 800)
+		time.Sleep(time.Millisecond * 500)
 		if pc >= 100.00 {
 			break
 		}
